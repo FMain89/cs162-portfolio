@@ -1,445 +1,174 @@
 # Author: Freddie Main III
 # GitHub Username: FMain89
 # Date: 2/23/2022
-# Description: This is my tester file for the Ship Game file
-
+# Description: This is the unit testing program for various cases.
 import unittest
 from ShipGame import ShipGame
 
 
-class ShipGameTester(unittest.TestCase):
-    """
-    Description:
-            This class will hold all the unit tests for the ship game.
-    """
-
-    def test_1(self):
+class TestShipGame(unittest.TestCase):
+    def test_place_ship_valid(self):
         """
-        Description:
-                Test of the place_ship method, correct use.
-
+        Test placing valid ships on the board for both players.
         """
         game = ShipGame()
-        t1 = game.place_ship('first', 5, 'B2', 'C')
-        self.assertIs(t1, True)
-        t2 = game.place_ship('first', 2, 'I8', 'R')
-        self.assertIs(t2, True)
-        t3 = game.place_ship('second', 3, 'H2', 'C')
-        self.assertIs(t3, True)
-        t4 = game.place_ship('second', 2, 'A1', 'C')
-        self.assertIs(t4, True)
-        t5 = game.place_ship('first', 5, 'A2', 'C')
-        self.assertIs(t5, False)
+        self.assertTrue(game.place_ship('first', 5, 'B2', 'C'))
+        self.assertTrue(game.place_ship('first', 2, 'I8', 'R'))
+        self.assertTrue(game.place_ship('second', 3, 'H2', 'C'))
+        self.assertTrue(game.place_ship('second', 2, 'A1', 'C'))
 
-    def test_2(self):
+    def test_place_ship_invalid_length(self):
         """
-        Description:
-                Test of the place_ship method, place on a border horizontal.
-
+        Test placing ships with invalid length (less than 2).
         """
         game = ShipGame()
-        t1 = game.place_ship('first', 5, 'H2', 'C')
-        self.assertIs(t1, False)
+        self.assertFalse(game.place_ship('first', 1, 'A1', 'R'))
+        self.assertFalse(game.place_ship('second', 1, 'J10', 'C'))
 
-    def test_3(self):
+    def test_place_ship_out_of_bounds(self):
         """
-        Description:
-                Test of the place_ship method, place on a vertical boarder.
-
+        Test placing ships out of the board bounds.
         """
         game = ShipGame()
-        t1 = game.place_ship('first', 5, 'J8', 'R')
-        self.assertIs(t1, False)
+        self.assertFalse(game.place_ship('first', 5, 'J7', 'R'))
+        self.assertFalse(game.place_ship('second', 4, 'H10', 'C'))
 
-    def test_4(self):
+    def test_place_ship_overlap(self):
         """
-        Description:
-                Test of the place_ship method, place ships on top of one another
+        Test placing overlapping ships on the board.
         """
         game = ShipGame()
-        t1 = game.place_ship('first', 5, 'B2', 'C')
-        t2 = game.place_ship('first', 2, 'C1', 'R')
-        self.assertIs(t2, False)
+        self.assertTrue(game.place_ship('first', 4, 'B2', 'C'))
+        self.assertFalse(game.place_ship('first', 3, 'C2', 'R'))
 
-    def test_5(self):
+    def test_place_ship_after_game_start(self):
         """
-        Description:
-                Test of the place_ship method, ship doesn't fit on the grid
-
+        Test attempting to place a ship after the game has started.
         """
         game = ShipGame()
-        t1 = game.place_ship('first', 11, 'B2', 'C')
-        self.assertIs(t1, False)
+        game.place_ship('first', 4, 'B2', 'C')
+        game.place_ship('second', 4, 'D5', 'R')
+        game.fire_torpedo('first', 'D5')
+        self.assertFalse(game.place_ship('first', 3, 'A1', 'R'))
 
-    def test_6(self):
+    def test_fire_torpedo_valid(self):
         """
-        Description:
-                Test of the place_ship method, a ship size of less than 2.
-
+        Test firing valid torpedoes and updating the game state.
         """
         game = ShipGame()
-        t1 = game.place_ship('first', 1, 'B2', 'C')
-        self.assertIs(t1, False)
-        t2 = game.place_ship('first', 0, 'B2', 'C')
-        self.assertIs(t2, False)
-        t3 = game.place_ship('first', -1, 'B2', 'C')
-        self.assertIs(t3, False)
+        game.place_ship('first', 3, 'B2', 'R')
+        game.place_ship('second', 2, 'D4', 'C')
+        self.assertTrue(game.fire_torpedo('first', 'D4'))
+        self.assertTrue(game.fire_torpedo('second', 'B2'))
 
-    def test_7(self):
+    def test_fire_torpedo_invalid_turn(self):
         """
-        Description:
-                Test of the get current state, state: FIRST_WON
-
+        Test firing torpedoes out of turn.
         """
         game = ShipGame()
-        t1 = game.place_ship('first', 5, 'B2', 'C')
-        game.set_current_state()
-        self.assertEqual(game.get_current_state(), "FIRST_WON")
+        game.place_ship('first', 3, 'B2', 'R')
+        game.place_ship('second', 2, 'D4', 'C')
+        self.assertTrue(game.fire_torpedo('first', 'D4'))
+        self.assertFalse(game.fire_torpedo('first', 'B2'))
 
-    def test_8(self):
+    def test_fire_torpedo_repeated(self):
         """
-        Description:
-                Test of the get current state, state: SECOND_WON
-
+        Test firing torpedoes at the same coordinates repeatedly.
         """
         game = ShipGame()
-        t1 = game.place_ship('second', 5, 'B2', 'C')
-        game.set_current_state()
-        self.assertEqual(game.get_current_state(), "SECOND_WON")
+        game.place_ship('first', 3, 'B2', 'R')
+        game.place_ship('second', 2, 'D4', 'C')
+        self.assertTrue(game.fire_torpedo('first', 'D4'))
+        self.assertTrue(game.fire_torpedo('second', 'B2'))
+        self.assertTrue(game.fire_torpedo('first', 'D4'))  # Wastes a turn
 
-    def test_9(self):
+    def test_fire_torpedo_out_of_bounds(self):
         """
-        Description:
-                Test of the get current state, state: UNFINISHED
-
+        Test firing a torpedo out of the board's bounds.
         """
         game = ShipGame()
-        t1 = game.place_ship('first', 5, 'B2', 'C')
-        t2 = game.place_ship('first', 2, 'I8', 'R')
-        t3 = game.place_ship('second', 3, 'H2', 'C')
-        t4 = game.place_ship('second', 2, 'A1', 'C')
-        self.assertEqual(game.get_current_state(), "UNFINISHED")
+        game.place_ship('first', 3, 'B2', 'R')
+        game.place_ship('second', 2, 'D4', 'C')
+        self.assertFalse(game.fire_torpedo('first', 'K11'))
+        self.assertFalse(game.fire_torpedo('second', 'Z9'))
 
-    def test_10(self):
+    def test_game_state_first_wins(self):
         """
-        Description:
-                Test fire torpedo, hit.
+        Test the game state when the first player wins.
         """
         game = ShipGame()
-        t1 = game.place_ship('first', 5, 'B2', 'C')
-        t2 = game.place_ship('first', 2, 'I8', 'R')
-        t3 = game.place_ship('second', 3, 'H2', 'C')
-        t4 = game.place_ship('second', 2, 'A1', 'C')
-        f1 = game.fire_torpedo('first', 'H2')
-        self.assertIs(f1, True)
+        game.place_ship('first', 2, 'B2', 'R')
+        game.place_ship('second', 2, 'D4', 'C')
+        game.fire_torpedo('first', 'D4')
+        game.fire_torpedo('second', 'B2')
+        game.fire_torpedo('first', 'E4')
+        game.fire_torpedo('second', 'B3')
+        game.fire_torpedo('first', 'D5')
+        self.assertEqual(game.get_current_state(), 'FIRST_WON')
 
-    def test_11(self):
+    def test_game_state_second_wins(self):
         """
-        Description:
-                Test fire torpedo, miss.
+        Test the game state when the second player wins.
         """
         game = ShipGame()
-        t1 = game.place_ship('first', 5, 'B2', 'C')
-        t2 = game.place_ship('first', 2, 'I8', 'R')
-        t3 = game.place_ship('second', 3, 'H2', 'C')
-        t4 = game.place_ship('second', 2, 'A1', 'C')
-        f1 = game.fire_torpedo('first', 'H4')
-        self.assertIs(f1, True)
+        game.place_ship('first', 2, 'B2', 'R')
+        game.place_ship('second', 3, 'D4', 'C')
+        game.fire_torpedo('first', 'D4')
+        game.fire_torpedo('second', 'B2')
+        game.fire_torpedo('first', 'E4')
+        game.fire_torpedo('second', 'B3')
+        self.assertEqual(game.get_current_state(), 'SECOND_WON')
 
-    def test_12(self):
+    def test_get_num_ships_remaining(self):
         """
-        Description:
-                Test fire torpedo, hit in same spot
-
+        Test getting the number of ships remaining for each player.
         """
         game = ShipGame()
-        t1 = game.place_ship('first', 5, 'B2', 'C')
-        t2 = game.place_ship('first', 2, 'I8', 'R')
-        t3 = game.place_ship('second', 3, 'H2', 'C')
-        t4 = game.place_ship('second', 2, 'A1', 'C')
-        f1 = game.fire_torpedo('first', 'H2')
-        self.assertIs(f1, True)
-        f2 = game.fire_torpedo('second', 'B2')
-        self.assertIs(f2, True)
-        f3 = game.fire_torpedo('first', 'H2')
-        self.assertIs(f3, True)
+        game.place_ship('first', 3, 'B2', 'R')
+        game.place_ship('second', 2, 'D4', 'C')
+        game.fire_torpedo('first', 'D4')
+        game.fire_torpedo('second', 'B2')
+        self.assertEqual(game.get_num_ships_remaining('first'), 1)
+        self.assertEqual(game.get_num_ships_remaining('second'), 1)
 
-    def test_13(self):
+    def test_game_unfinished_state(self):
         """
-        Description:
-                Test fire torpedo, miss in the same spot
+        Test that the game remains unfinished until all ships of a player are
+        sunk.
         """
         game = ShipGame()
-        t1 = game.place_ship('first', 5, 'B2', 'C')
-        t2 = game.place_ship('first', 2, 'I8', 'R')
-        t3 = game.place_ship('second', 3, 'H2', 'C')
-        t4 = game.place_ship('second', 2, 'A1', 'C')
-        f1 = game.fire_torpedo('first', 'H4')
-        self.assertIs(f1, True)
-        f2 = game.fire_torpedo('second', 'I8')
-        self.assertIs(f2, True)
-        f3 = game.fire_torpedo('first', 'H4')
-        self.assertIs(f3, True)
+        game.place_ship('first', 3, 'B2', 'R')
+        game.place_ship('second', 3, 'D4', 'C')
+        game.fire_torpedo('first', 'D4')
+        game.fire_torpedo('second', 'B2')
+        game.fire_torpedo('first', 'E4')
+        self.assertEqual(game.get_current_state(), 'UNFINISHED')
 
-    def test_14(self):
+    def test_full_game(self):
         """
-        Description:
-                Test fire torpedo, on a sunk ship
+        Test a full game played from start to finish with both players
+        alternating turns.
         """
         game = ShipGame()
-        t1 = game.place_ship('first', 2, 'B2', 'C')
-        t2 = game.place_ship('first', 2, 'I8', 'R')
-        t3 = game.place_ship('second', 3, 'H2', 'C')
-        f1 = game.fire_torpedo('first', 'I8')
-        self.assertIs(f1, True)
-        f2 = game.fire_torpedo('second', 'B2')
-        self.assertIs(f2, True)
-        f3 = game.fire_torpedo('first', 'I9')
-        self.assertIs(f3, True)
-        f4 = game.fire_torpedo('second', 'C2')
-        self.assertIs(f4, True)
-        s1 = game.get_num_ships_remaining('first')
-        self.assertEqual(s1, 1)
-        f5 = game.fire_torpedo('first', 'I10')
-        self.assertIs(f5, True)
-        f6 = game.fire_torpedo('second', 'C2')
-        self.assertIs(f6, True)
+        game.place_ship('first', 3, 'A1', 'R')
+        game.place_ship('first', 2, 'C1', 'C')
+        game.place_ship('second', 3, 'E1', 'R')
+        game.place_ship('second', 2, 'G1', 'C')
 
-    def test_15(self):
-        """
-        Description:
-                test player one get num ships remaining
-        """
-        game = ShipGame()
-        t1 = game.place_ship('first', 5, 'B2', 'C')
-        t2 = game.place_ship('first', 2, 'I8', 'R')
-        t3 = game.place_ship('second', 3, 'H2', 'C')
-        t4 = game.place_ship('second', 2, 'A1', 'C')
-        s1 = game.get_num_ships_remaining('first')
-        self.assertEqual(s1, 2)
-
-    def test_16(self):
-        """
-        Description:
-                test player two get num ships remaining
-        """
-        game = ShipGame()
-        t1 = game.place_ship('first', 5, 'B2', 'C')
-        t2 = game.place_ship('first', 2, 'I8', 'R')
-        t3 = game.place_ship('second', 3, 'H2', 'C')
-        t4 = game.place_ship('second', 2, 'A1', 'C')
-        s1 = game.get_num_ships_remaining('second')
-        self.assertEqual(s1, 2)
-
-    def test_17(self):
-        """
-        Description:
-                Test NEG length of ship during place_ship
-        """
-        game = ShipGame()
-        t1 = game.place_ship('first', -5, 'B2', 'C')
-        self.assertIs(t1, False)
-
-    def test_18(self):
-        """
-        Description:
-                Test invalid fire coordinates
-        """
-        game = ShipGame()
-        t1 = game.place_ship('first', 5, 'B2', 'C')
-        t2 = game.place_ship('first', 2, 'I8', 'R')
-        t3 = game.place_ship('second', 3, 'H2', 'C')
-        t4 = game.place_ship('second', 2, 'A1', 'C')
-        f1 = game.fire_torpedo('first', 'K2')
-        f2 = game.fire_torpedo('first', 'a15')
-        self.assertIs(f1, False)
-        self.assertIs(f2, False)
-
-    def test_19(self):
-        """
-        Description:
-                Test lower case coordinates
-        """
-        game = ShipGame()
-        t1 = game.place_ship('first', 5, 'b2', 'C')
-        t2 = game.place_ship('first', 2, 'i8', 'R')
-        t3 = game.place_ship('second', 3, 'h2', 'C')
-        t4 = game.place_ship('second', 2, 'a1', 'C')
-        self.assertIs(t1, True)
-        self.assertIs(t2, True)
-        self.assertIs(t3, True)
-        self.assertIs(t4, True)
-
-    def test_20(self):
-        """
-        Description:
-                Fire order needs to be maintained.
-        """
-        game = ShipGame()
-        t1 = game.place_ship('first', 5, 'B2', 'C')
-        t2 = game.place_ship('first', 2, 'I8', 'R')
-        t3 = game.place_ship('second', 3, 'H2', 'C')
-        t4 = game.place_ship('second', 2, 'A1', 'C')
-        f1 = game.fire_torpedo('first', 'H2')
-        self.assertIs(f1, True)
-        f2 = game.fire_torpedo('first', 'E2')
-        self.assertIs(f2, False)
-
-    def test_21(self):
-        """
-        Description:
-                Test to see what happens if you fire torpedo then try and place a ship. You can assume ships won't be
-                placed after fire torpedo has been called.
-        """
-        game = ShipGame()
-        t1 = game.place_ship('first', 5, 'B2', 'C')
-        f1 = game.fire_torpedo('first', 'H2')
-        self.assertIs(f1, True)
-        t2 = game.place_ship('first', 2, 'I8', 'R')
-        self.assertIs(t2, True)
-
-    def test_22(self):
-        """
-        Description:
-                Full game where player one wins.
-
-        """
-        game = ShipGame()
-        t1 = game.place_ship('first', 2, 'B2', 'C')
-        t2 = game.place_ship('second', 2, 'D3', 'R')
-        f1 = game.fire_torpedo('first', 'D3')
-        f2 = game.fire_torpedo('second', 'A3')
-        f3 = game.fire_torpedo('first', 'D4')
-        g1 = game.get_current_state()
-        self.assertEqual(g1, 'FIRST_WON')
-
-    def test_23(self):
-        """
-        Description:
-                Full game where player two wins.
-
-        """
-        game = ShipGame()
-        t1 = game.place_ship('first', 2, 'B2', 'C')
-        t2 = game.place_ship('second', 2, 'D3', 'R')
-        f1 = game.fire_torpedo('first', 'D8')
-        f2 = game.fire_torpedo('second', 'B2')
-        f3 = game.fire_torpedo('first', 'D9')
-        f4 = game.fire_torpedo('second', 'C2')
-        g1 = game.get_current_state()
-        self.assertEqual(g1, 'SECOND_WON')
-
-    def test_24(self):
-        """
-        Description:
-                Test a fire after winning has been met.
-
-        """
-        game = ShipGame()
-        t1 = game.place_ship('first', 2, 'B2', 'C')
-        t2 = game.place_ship('second', 2, 'D3', 'R')
-        f1 = game.fire_torpedo('first', 'D3')
-        f2 = game.fire_torpedo('second', 'A3')
-        f3 = game.fire_torpedo('first', 'D4')
-        g1 = game.get_current_state()
-        self.assertEqual(g1, 'FIRST_WON')
-        f4 = game.fire_torpedo('second', 'A1')
-        self.assertIs(f4, False)
-
-    def test_25(self):
-        """
-        Description:
-                Test a fire after winning has been met.
-
-        """
-        game = ShipGame()
-        t1 = game.place_ship('first', 2, 'B2', 'C')
-        t2 = game.place_ship('second', 2, 'D3', 'R')
-        f1 = game.fire_torpedo('first', 'D8')
-        f2 = game.fire_torpedo('second', 'B2')
-        f3 = game.fire_torpedo('first', 'D9')
-        f4 = game.fire_torpedo('second', 'C2')
-        g1 = game.get_current_state()
-        self.assertEqual(g1, 'SECOND_WON')
-        f5 = game.fire_torpedo('first', 'A1')
-        self.assertIs(f5, False)
-
-    def test_26(self):
-        """
-        Description:
-               Longer game, player one winning.
-
-        """
-        game = ShipGame()
-        t1 = game.place_ship('first', 5, 'B2', 'C')  # B2, C2, D2, E2, F2
-        t2 = game.place_ship('first', 2, 'I8', 'R')  # I8, I9
-        t3 = game.place_ship('second', 3, 'H2', 'C')  # H2, I2, J2
-        t4 = game.place_ship('second', 2, 'A1', 'C')  # A1, B1
-        f1 = game.fire_torpedo('first', 'H2')
-        f2 = game.fire_torpedo('second', 'I8')
-        f3 = game.fire_torpedo('first', 'I2')
-        f4 = game.fire_torpedo('second', 'I9')  # Sinks a ship
-        g1 = game.get_current_state()  # Unfinished
-        s1 = game.get_num_ships_remaining('first')  # One left
-        s2 = game.get_num_ships_remaining('second')  # Two left
-        self.assertEqual(g1, 'UNFINISHED')
-        self.assertEqual(s1, 1)
-        self.assertEqual(s2, 2)
-        f5 = game.fire_torpedo('first', 'J2')  # Sinks a ship
-        s3 = game.get_num_ships_remaining('second')  # One left
-        g2 = game.get_current_state()  # Unfinished
-        self.assertEqual(s3, 1)
-        f6 = game.fire_torpedo('second', 'A1')
-        f7 = game.fire_torpedo('first', 'A1')
-        f8 = game.fire_torpedo('second', 'B2')
-        f9 = game.fire_torpedo('first', 'B1')  # Sinks a ship.
-        g3 = game.get_current_state()  # Player one wins
-        s4 = game.get_num_ships_remaining('first')  # One Left
-        s5 = game.get_num_ships_remaining('second')  # 0 left
-        self.assertEqual(g3, 'FIRST_WON')
-        self.assertEqual(s4, 1)
-        self.assertEqual(s5, 0)
-
-    def test_27(self):
-        """
-        Description:
-               Longer game, player one winning.
-
-        """
-        game = ShipGame()
-        t1 = game.place_ship('first', 5, 'B2', 'C')  # B2, C2, D2, E2, F2
-        t2 = game.place_ship('first', 2, 'I8', 'R')  # I8, I9
-        t3 = game.place_ship('second', 3, 'H2', 'C')  # H2, I2, J2
-        t4 = game.place_ship('second', 2, 'A1', 'C')  # A1, B1
-        f1 = game.fire_torpedo('first', 'H2')
-        f2 = game.fire_torpedo('second', 'I8')
-        f3 = game.fire_torpedo('first', 'I2')
-        f4 = game.fire_torpedo('second', 'I9')  # Sinks a ship
-        g1 = game.get_current_state()  # Unfinished
-        s1 = game.get_num_ships_remaining('first')  # One left
-        s2 = game.get_num_ships_remaining('second')  # Two left
-        self.assertEqual(g1, 'UNFINISHED')
-        self.assertEqual(s1, 1)
-        self.assertEqual(s2, 2)
-        f5 = game.fire_torpedo('first', 'J2')  # Sinks a ship
-        s3 = game.get_num_ships_remaining('second')  # One left
-        g2 = game.get_current_state()  # Unfinished
-        self.assertEqual(s3, 1)
-        f6 = game.fire_torpedo('second', 'B2')
-        f7 = game.fire_torpedo('first', 'D1')
-        f8 = game.fire_torpedo('second', 'C2')
-        f9 = game.fire_torpedo('first', 'E9')
-        f10 = game.fire_torpedo('second', 'D2')
-        f11 = game.fire_torpedo('first', 'G4')
-        f12 = game.fire_torpedo('second', 'F2')
-        f13 = game.fire_torpedo('first', 'A1')
-        f14 = game.fire_torpedo('second', 'E2')  # Sinks Ship
-        g3 = game.get_current_state()  # Player two wins
-        s4 = game.get_num_ships_remaining('first')  # Zero Left
-        s5 = game.get_num_ships_remaining('second')  # 1 left
-        self.assertEqual(g3, 'SECOND_WON')
-        self.assertEqual(s4, 0)
-        self.assertEqual(s5, 1)
+        game.fire_torpedo('first', 'E1')
+        game.fire_torpedo('second', 'A1')
+        game.fire_torpedo('first', 'E2')
+        game.fire_torpedo('second', 'A2')
+        game.fire_torpedo('first', 'E3')   # Sinks Ship
+        game.fire_torpedo('second', 'A3')   # Sinks Ship
+        game.fire_torpedo('first', 'G1')
+        game.fire_torpedo('second', 'C1')
+        self.assertEqual(game.get_current_state(), 'UNFINISHED')
+        self.assertEqual(game.get_num_ships_remaining('first'), 1)
+        self.assertEqual(game.get_num_ships_remaining('second'), 1)
+        game.fire_torpedo('first', 'H1')   # Sinks Ship
+        self.assertFalse(game.fire_torpedo('second', 'C2'))
+        self.assertEqual(game.get_current_state(), 'FIRST_WON')
 
 
 if __name__ == '__main__':
